@@ -85,10 +85,15 @@ public class DirectLogon {
 
           if (responseToken.get("token") != null) {
             item.withString("userTokenId", responseToken.get("token").toString());
-            item.withLong("joinedDate", new Date().getTime());
+            item.withLong("joinedDate", new Date().getTime()-2678421);
           }
+          
+          table = dynamoDB.getTable("User_ID_Mapping");
+          
+          Item item1 = new Item();
+          item1.withPrimaryKey("tokenKey",responseToken.get("token").toString()).withString("userName", username);
 
-          table.putItem(item);
+          table.putItem(item1);
 
 
         } catch (IOException e1) {
