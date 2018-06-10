@@ -28,7 +28,9 @@ public class DirectLogon {
     String password = null;
     String consumerKey = null;
     URL obj = null;
+    JSONObject responseToken = new JSONObject();
     StringBuffer response = new StringBuffer();
+    String userId = null;
 
 
     System.out.println("Reached inside ");
@@ -65,6 +67,7 @@ public class DirectLogon {
           Item item = table.getItem("userName", username);
 
           consumerKey = item.get("consumer_key").toString();
+          userId = item.getString("userId");
 
           System.out.println("ConsumerKey" + consumerKey);
 
@@ -80,7 +83,7 @@ public class DirectLogon {
           in.close();
           System.out.println("response" + response.toString());
 
-          JSONObject responseToken = new JSONObject();
+          
           responseToken = (JSONObject) parser.parse(response.toString());
 
           if (responseToken.get("token") != null) {
@@ -94,6 +97,18 @@ public class DirectLogon {
           item1.withPrimaryKey("tokenKey",responseToken.get("token").toString()).withString("userName", username);
 
           table.putItem(item1);
+          
+          table = dynamoDB.getTable("Reward_Basket");
+          item = table.getItem("userId", userId);
+          
+          long reward= item.getLong("rewardBasket");
+          System.out.println("Reward"+ reward);
+          
+          responseToken.put("reward_points", reward);
+          
+         
+          
+          
 
 
         } catch (IOException e1) {
@@ -114,7 +129,7 @@ public class DirectLogon {
     } catch (IOException e) {
 
     }
-    return response.toString();
+    return responseToken.toJSONString();
   }
 
 }
