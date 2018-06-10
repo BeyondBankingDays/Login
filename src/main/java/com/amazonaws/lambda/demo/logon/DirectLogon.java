@@ -1,4 +1,4 @@
-package com.amazonaws.lambda.demo;
+package com.amazonaws.lambda.demo.logon;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,8 +33,6 @@ public class DirectLogon {
     String userId = null;
 
 
-    System.out.println("Reached inside ");
-
     HttpURLConnection con;
     try {
       obj = new URL(url);
@@ -42,35 +40,26 @@ public class DirectLogon {
       con.setRequestMethod("POST");
       con.setRequestProperty("Content-Type", "application/json");
 
-      System.out.println(event.get("body"));
+      
 
       if (event.get("body") != null) {
         JSONObject body;
         try {
           body = (JSONObject) parser.parse((String) event.get("body"));
-          System.out.println("body" + body.toJSONString());
-
-          if (body.get("username") != null) {
-            username = (String) body.get("username");
-          }
-          if (body.get("password") != null) {
+          
+           username = (String) body.get("username");  
+          
             password = (String) body.get("password");
-          }
-          System.out.println(username + password);
 
           AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
           DynamoDB dynamoDB = new DynamoDB(client);
 
           Table table = dynamoDB.getTable("User_Offerings");
 
-
           Item item = table.getItem("userName", username);
 
           consumerKey = item.get("consumer_key").toString();
           userId = item.getString("userId");
-
-          System.out.println("ConsumerKey" + consumerKey);
-
 
           con.setRequestProperty("Authorization", "DirectLogin username=\"" + username + "\",password=\"" + password
               + "\",consumer_key=\"" + consumerKey + "\"");
@@ -81,9 +70,7 @@ public class DirectLogon {
             response.append(inputLine);
           }
           in.close();
-          System.out.println("response" + response.toString());
 
-          
           responseToken = (JSONObject) parser.parse(response.toString());
 
           if (responseToken.get("token") != null) {
