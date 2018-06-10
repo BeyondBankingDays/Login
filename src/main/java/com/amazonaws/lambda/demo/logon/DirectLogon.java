@@ -1,9 +1,6 @@
 package com.amazonaws.lambda.demo.logon;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
 
@@ -11,6 +8,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.amazonaws.lambda.demo.http.HTTPConnBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -23,28 +21,17 @@ public class DirectLogon {
 
   public String logon(JSONObject event) {
 
-    String url = "https://beyondbanking.openbankproject.com/my/logins/direct";
+    
     String username = null;
     String password = null;
     String consumerKey = null;
-    URL obj = null;
     JSONObject responseToken = new JSONObject();
-    StringBuffer response = new StringBuffer();
     String userId = null;
 
-
-    HttpURLConnection con;
-    try {
-      obj = new URL(url);
-      con = (HttpURLConnection) obj.openConnection();
-      con.setRequestMethod("POST");
-      con.setRequestProperty("Content-Type", "application/json");
-
-      
-
-      if (event.get("body") != null) {
+    if (event.get("body") != null) {
         JSONObject body;
-        try {
+    try {
+
           body = (JSONObject) parser.parse((String) event.get("body"));
           
            username = (String) body.get("username");  
@@ -60,18 +47,10 @@ public class DirectLogon {
 
           consumerKey = item.get("consumer_key").toString();
           userId = item.getString("userId");
-
-          con.setRequestProperty("Authorization", "DirectLogin username=\"" + username + "\",password=\"" + password
-              + "\",consumer_key=\"" + consumerKey + "\"");
-          BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-
-          String inputLine;
-          while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-          }
-          in.close();
-
-          responseToken = (JSONObject) parser.parse(response.toString());
+          
+          HTTPConnBuilder httpconnbuilder = new HTTPConnBuilder();
+          
+          responseToken = (JSONObject) parser.parse(httpconnbuilder.build(username,password,consumerKey));
 
           if (responseToken.get("token") != null) {
             item.withString("userTokenId", responseToken.get("token").toString());
@@ -92,11 +71,6 @@ public class DirectLogon {
           System.out.println("Reward"+ reward);
           
           responseToken.put("reward_points", reward);
-          
-         
-          
-          
-
 
         } catch (IOException e1) {
           // TODO Auto-generated catch block
@@ -106,16 +80,8 @@ public class DirectLogon {
           // TODO Auto-generated catch block
           e.printStackTrace();
         }
-
-
-
       }
 
-
-
-    } catch (IOException e) {
-
-    }
     return responseToken.toJSONString();
   }
 
